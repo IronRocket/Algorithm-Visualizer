@@ -1,152 +1,270 @@
-#Encryption False
-import pygame
-import random,math,time,os
+import pygame,random,math,time,pygame_widgets
+from pygame_widgets.slider import Slider
+from pygame_widgets.textbox import TextBox
+from pygame_widgets.button import Button
+from pygame_widgets.dropdown import Dropdown
 pygame.init()
 pygame.mixer.init()
 
-class DrawData:
-    BLACK = 0,0,0
-    WHITE = 255,255,255
-    GREEN = 0,255,0
-    RED = 255,0,0
-    GREY = 128,128,128
-    BLUE = 0,0,255
-    BACKGROUND_COLOR = WHITE
-    INTERSTELLAR = pygame.mixer.Sound("assets/Interstellar Main Theme - Hans Zimmer.mp3")
-    GRADIENTS = [
-        GREY,
-        (160,160,160),
-        (192,192,192)
-    ]
-    SIDE_PAD = 100
-    TOP_PAD = 150
+width,height = 800,600
+window = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Sorting Algortihm")
 
-    def __init__(self,width,height,lst):
-        self.width = width
-        self.height = height
+font = pygame.font.SysFont('Comic Sans MS', 14)
 
-        self.window = pygame.display.set_mode((width, height))
-        pygame.display.set_caption("Sorting Algortihm")
-        self.set_list(lst)
 
-    def set_list(self, lst):
-        self.lst = lst
-        self.min_val = min(lst)
-        self.max_val = max(lst)
-        self.block_width = round((self.width - self.SIDE_PAD) / len(lst))
-        self.block_height = math.floor((self.height- self.TOP_PAD) / (self.max_val - self.min_val))
-        self.start_x = self.SIDE_PAD // 2
+BLACK = 0,0,0
+WHITE = 255,255,255
+GREEN = 0,255,0
+RED = 255,0,0
+GREY = 128,128,128
+BLUE = 0,0,255
+INTERSTELLAR = pygame.mixer.Sound("assets/Interstellar Main Theme - Hans Zimmer.mp3")
+GRADIENTS = [
+    GREY,
+    (160,160,160),
+    (192,192,192)
+]
+SIDE_PAD = 100
+TOP_PAD = 150
 
-def generate_list(n,min_val,max_val):
-    lst = []
-    for _ in range(n):
-        val = random.randint(min_val,max_val)
-        lst.append(val)
-    return lst
 
-def draw(draw_info, ascending):
-    draw_info.window.fill(draw_info.BACKGROUND_COLOR)
-    draw_list(draw_info)
-    pygame.display.update()
+class Game:
+    def __init__(self):
+        self.n = 50
+        self.min_val = 0
+        self.max_val = 100
+        self.l = []
+        self.sorting_algorithm = self.bubble_sort
+        self.sorting_algorithm_generator = None
+        self.sorting = False
 
-def draw_list(draw_info, color_positions={}, clear_bg=False):
-    lst = draw_info.lst
-    if clear_bg:
-        clear_rect = (draw_info.SIDE_PAD//2, draw_info.TOP_PAD, draw_info.width - draw_info.SIDE_PAD, draw_info.height - draw_info.TOP_PAD)
-        pygame.draw.rect(draw_info.window, draw_info.BACKGROUND_COLOR, clear_rect)
-    for i, val in enumerate(lst):
-        x = draw_info.start_x + i * draw_info.block_width
-        y = draw_info.height - (val - draw_info.min_val) * draw_info.block_height
+    def generate_list(self):
+        self.l = []
+        for _ in range(self.n):
+            val = random.randint(self.min_val,self.max_val)
+            self.l.append(val)
+            
+        self.min_val = min(self.l)
+        self.max_val = max(self.l)
+        self.block_width = round(width - SIDE_PAD) / len(self.l)
+        self.block_height = math.floor((height- TOP_PAD) / (self.max_val - self.min_val))
+        self.start_x = SIDE_PAD // 2
+    
+    def resetList(self,newValue:int):
+        self.l = []
+        self.n = newValue
+        self.generate_list()
 
-        color = draw_info.GRADIENTS[i % 3]
-        if i in color_positions:
-            color = color_positions[i]
-        pygame.draw.rect(draw_info.window, color, (x,y, draw_info.block_width, draw_info.height))
-    if clear_bg:
-        pygame.display.update()
+    def toggleSorting(self):
+        if not self.sorting:
+            self.sorting = True
+            self.sorting_algorithm_generator = self.sorting_algorithm()
+        else:
+            self.sorting = False
+            self.sorting_algorithm_generator = None
 
-def bubble_sort(draw_info, ascending=True):
-    lst = draw_info.lst
-    for i in range(len(lst)-1):
-        for j in range(len(lst)-1-i):
-            num1= lst[j]
-            num2 = lst[j+1]
-            if (num1 > num2 and ascending) or (num1 < num2 and not ascending):
-                lst[j], lst[j+1] = lst[j+1], lst[j]
-                draw_list(draw_info, {j:draw_info.BLUE, j + 1: draw_info.BLACK}, True)
+    def draw_list(self, color_positions={}, clear_bg=False):
+        if clear_bg:
+            clear_rect = (SIDE_PAD//2, TOP_PAD, width - SIDE_PAD, height - TOP_PAD)
+            pygame.draw.rect(window, WHITE, clear_rect)
+        for i, val in enumerate(self.l):
+            x = self.start_x + i * self.block_width
+            y = height - (val - self.min_val) * self.block_height
+
+            color = GRADIENTS[i % 3]
+            if i in color_positions:
+                color = color_positions[i]
+            pygame.draw.rect(window, color, (x,y, self.block_width, height))
+        if clear_bg:
+            pygame.display.update()
+    
+    def countingSort(self):
+        i_lower_bound , upper_bound = min(self.l), max(self.l)
+        lower_bound = i_lower_bound
+        if i_lower_bound < 0:
+            lb = abs(i_lower_bound)
+            temp = []
+            for i,item in self.l:
+                temp.append(item+lb)
+                self.draw_list({i:BLACK}, True)
                 yield True
-    return lst
-def insertion_sort(draw_info, ascending=True):
-    lst = draw_info.lst
-    for i in range(1,len(lst)):
-        current = lst[i]
-        while True:
-            ascending_sort = i > 0 and lst[i - 1] > current and ascending
-            descending_sort = i > 0 and lst[i - 1] < current and not ascending
-            if not ascending_sort and not descending_sort:
-                break
-            lst[i] = lst[i - 1]
-            i = i - 1
-            lst[i] = current
-            draw_list(draw_info, {i: draw_info.BLUE, i - 1: draw_info.BLACK}, True)
+            self.l = temp
+            lower_bound , upper_bound = min(self.l), max(self.l)
+        
+        counter_nums = [0]*(upper_bound-lower_bound+1)
+        for item in self.l:
+            counter_nums[item-lower_bound] += 1
+            self.draw_list({item-lower_bound:BLACK}, True)
             yield True
-    return lst
-def main():
+        pos = 0
+        for idx, item in enumerate(counter_nums):
+            num = idx + lower_bound
+            for i in range(item):
+                self.l[pos] = num
+                self.draw_list({pos:BLACK}, True)
+                yield True
+                pos += 1
+        if i_lower_bound < 0:
+            lb = abs(i_lower_bound)
+            self.l = [item - lb for item in self.l]
+    
+    def shellSort(self):
+        n = len(self.l)
+        k = int(math.log2(n))
+        interval = 2**k -1
+        while interval > 0:
+            for i in range(interval, n):
+                temp = self.l[i]
+                j = i
+                while j >= interval and self.l[j - interval] > temp:
+                    self.l[j] = self.l[j - interval]
+                    self.draw_list({j:BLUE, j-interval: BLACK}, True)
+                    yield True
+                    j -= interval
+                self.l[j] = temp
+            k -= 1
+            interval = 2**k -1
+
+
+    def selectionSort(self):
+        size = len(self.l)
+        for ind in range(size):
+            min_index = ind
+
+            for j in range(ind + 1, size):
+                # select the minimum element in every iteration
+                if self.l[j] <self.l[min_index]:
+                    min_index = j
+                # swapping the elements to sort the array
+            (self.l[ind], self.l[min_index]) = (self.l[min_index], self.l[ind])
+            self.draw_list({ind:BLUE, min_index: BLACK}, True)
+            yield True
+
+
+    def bubble_sort(self,ascending=True):
+        for i in range(len(self.l)-1):
+            for j in range(len(self.l)-1-i):
+                num1= self.l[j]
+                num2 = self.l[j+1]
+                if (num1 > num2 and ascending) or (num1 < num2 and not ascending):
+                    self.l[j], self.l[j+1] = self.l[j+1], self.l[j]
+                    self.draw_list({j:BLUE, j + 1: BLACK}, True)
+                    yield True
+        return self.l
+    
+    def insertion_sort(self,ascending=True):
+
+        for i in range(1,len(self.l)):
+            current = self.l[i]
+            while True:
+                ascending_sort = i > 0 and self.l[i - 1] > current and ascending
+                descending_sort = i > 0 and self.l[i - 1] < current and not ascending
+                if not ascending_sort and not descending_sort:
+                    break
+                self.l[i] = self.l[i - 1]
+                i = i - 1
+                self.l[i] = current
+                self.draw_list( {i: BLUE, i - 1: BLACK}, True)
+                yield True
+        return self.l
+
+    def draw(self):
+        window.fill(WHITE)
+        self.draw_list()
+
+if __name__ == "__main__":
     clock = pygame.time.Clock()
     FPS = 30
     run = True
     sorting = False
-    n = 50
-    min_val = 0
-    max_val = 100
-    lst = generate_list(n,min_val,max_val)
-    draw_info = DrawData(800,600,lst)
+    game = Game()
+    game.generate_list()
+
+    sizeOfList = Slider(window, 10, 10, 200, 20, min=0, max=150, step=1)
+    game.resetList(sizeOfList.getValue())
+    sizeOfListOutput = TextBox(window, 225, 5, 150, 30, fontSize=20)
+    sizeOfListOutput.disable()
+
+    framesPerSecond = Slider(window, 10, 50, 200, 20, min=5, max=200, step=1)
+    framesPerSecond.setValue(60)
+    framesPerSecondOutput = TextBox(window, 225, 45, 150, 30, fontSize=20)
+    framesPerSecondOutput.disable()
+    reset = Button(window,
+        10,80,
+        50,50,
+
+        text='Reset',
+        fontSize=20,
+        margin=20,
+        inactiveColour=(200, 50, 0),
+        hoverColour=(150, 0, 0),
+        pressedColour=(0, 200, 20),
+        radius=20,
+        onClick=lambda: game.resetList(sizeOfList.getValue())
+    )
+
+    sortingAlgorithms = Dropdown(
+        window, width-125, 10, 115, 50, name='Select Algorithm',
+        choices=[
+            'Bubble Sort',
+            'Insertion Sort',
+            'Selection Sort',
+            'Shell Sort',
+            'Counting Sort'
+        ],
+        borderRadius=3, colour=pygame.Color('green'), 
+        values=[
+            game.bubble_sort, game.insertion_sort, game.selectionSort,
+            game.shellSort, game.countingSort
+            ], 
+        direction='down', textHAlign='left'
+    )
+    
     ascending = True
-    sorting_algorithm = bubble_sort
-    sorting_algorithm_generator = None
+    sorting_algorithm = game.bubble_sort
+    game.sorting_algorithm_generator = None
     compare = 0
     counter = 0
+    INTERSTELLAR.play()
     while run:
         clock.tick(FPS)
-        if sorting:
+        if game.sorting:
             counter += 1
             if counter == 1:
-                DrawData.INTERSTELLAR.play()
                 start = time.time()
             try:
-                next(sorting_algorithm_generator)
+                next(game.sorting_algorithm_generator)
                 compare += 1
             except StopIteration:
                 print("Comparisons:"+str(compare))
                 print("Time:"+str(time.time()-start))
-                sorting = False
+                game.sorting = False
+                counter = 0
         else:
-            draw(draw_info, ascending)
-        for event in pygame.event.get():
+            game.draw()
+
+        events = pygame.event.get()
+        for event in events:
+            if event.type == pygame.QUIT:
+                run = False
             if event.type == pygame.KEYDOWN:
-                if event.type == pygame.QUIT:
-                    run = False
                 if event.key == pygame.K_r:
-                    lst = generate_list(n,min_val,max_val)
-                    draw_info.set_list(lst)
+                    game.generate_list()
                     sorting = False
                 if event.key == pygame.K_q:
-                    FPS += 2
+                    FPS += 5
                 if event.key == pygame.K_e:
-                    FPS -= 2
-                if event.key == pygame.K_SPACE and sorting == False:
-                    sorting = True
-                    sorting_algorithm_generator = sorting_algorithm(draw_info, ascending) 
-                if event.key == pygame.K_a and sorting == False:
-                    ascending = True
-                if event.key == pygame.K_d and sorting == False:
-                    ascending = False
-                elif event.key == pygame.K_i and sorting == False:
-                    sorting_algorithm = insertion_sort
-                    sorting_algo_name = "Insertion Sort"
-                elif event.key == pygame.K_b and sorting == False:
-                    sorting_algorithm = bubble_sort
-                    sorting_algo_name = "Bubble Sort"
+                    FPS -= 5
+                if event.key == pygame.K_SPACE:
+                    game.toggleSorting()
+        
+        sizeOfListOutput.setText(f'Size of list:{sizeOfList.getValue()}')
+        framesPerSecondOutput.setText(f'Fps:{framesPerSecond.getValue()}')
+        FPS = framesPerSecond.getValue()
+
+        game.sorting_algorithm = sortingAlgorithms.getSelected()
+
+        pygame_widgets.update(events)
+        pygame.display.update()
     pygame.quit()
-if __name__ == "__main__":
-    main()
