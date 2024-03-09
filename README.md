@@ -13,10 +13,8 @@ This is a application that visualizes different algorithms such as bubble sort,i
 
 
 # Installation
-
 ```bash
-git clone https://github.com/IronRocket/Algorithm-Visualizer.git
+git clone https://github.com/IronRocket/Algorithm-Visualizer
 cd Algorithm-Visualizer
 pip install -r requirements.txt
-python algorithm.py
 ```
