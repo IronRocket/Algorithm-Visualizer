@@ -3,6 +3,7 @@ from pygame_widgets.slider import Slider
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.button import Button
 from pygame_widgets.dropdown import Dropdown
+
 pygame.init()
 pygame.mixer.init()
 
@@ -203,6 +204,19 @@ if __name__ == "__main__":
         radius=20,
         onClick=lambda: game.resetList(sizeOfList.getValue())
     )
+    start = Button(window,
+        width-195,10,
+        50,50,
+
+        text='Start',
+        fontSize=20,
+        margin=20,
+        inactiveColour=(200, 50, 0),
+        hoverColour=(150, 0, 0),
+        pressedColour=(0, 200, 20),
+        radius=20,
+        onClick=lambda: game.toggleSorting()
+    )
 
     sortingAlgorithms = Dropdown(
         window, width-125, 10, 115, 50, name='Select Algorithm',
@@ -248,16 +262,6 @@ if __name__ == "__main__":
         for event in events:
             if event.type == pygame.QUIT:
                 run = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r:
-                    game.generate_list()
-                    sorting = False
-                if event.key == pygame.K_q:
-                    FPS += 5
-                if event.key == pygame.K_e:
-                    FPS -= 5
-                if event.key == pygame.K_SPACE:
-                    game.toggleSorting()
         
         sizeOfListOutput.setText(f'Size of list:{sizeOfList.getValue()}')
         framesPerSecondOutput.setText(f'Fps:{framesPerSecond.getValue()}')
